@@ -1,0 +1,72 @@
+def agentEnv = agentContainer.from('''
+FROM python:${pythonVersion}
+
+RUN pip install virtualenv \
+ && pip install --upgrade pip
+''', [pythonVersion: '.python-version'])
+
+pipeline {
+    agent {
+        docker {
+            image agentEnv.image
+            label agentEnv.nodeLabel
+            args  agentEnv.dockerRunArgs
+
+            customWorkspace agentEnv.customWorkspace
+        }
+    }
+    environment {
+        BASH_ENV = "${WORKSPACE}/.bashrc"
+
+        PIP_CACHE_DIR = "${WORKSPACE}/.cache/pip"
+    }
+    stages {
+        stage('pip install') {
+            steps {
+                withCaching(keys: [
+                                'requirements.txt',
+                                'requirements-dev.txt',
+                            ], 
+                            folders: [
+                                'venv', 
+                                '.cache/pip',
+                            ], 
+                            fullyCacheable: true) {
+                    sh 'virtualenv venv'
+                    sh "echo 'source ${WORKSPACE}/venv/bin/activate' > .bashrc"
+
+                    sh 'pip install -r requirements.txt; pip freeze'
+                    sh 'pip install -r requirements-dev.txt; pip freeze'
+                }
+            }
+        }
+        stage('env') {
+            steps {
+                sh "echo 'source ${WORKSPACE}/venv/bin/activate' > .bashrc"
+
+                sh 'env | sort'
+                sh 'python --version'
+                sh 'pip freeze'
+            }
+        }
+        stage('tests') {
+            parallel {
+                stage('flake8') {
+                    steps {
+                        sh 'flake8 src'
+                    }
+                }
+                stage('install') {
+                    steps {
+                        sh 'cd src; pip install --editable .'
+                    }
+                }
+                stage('pytest') {
+                    steps {
+                        sh 'pytest'
+                    }
+                }
+            }
+        }
+    }
+}
