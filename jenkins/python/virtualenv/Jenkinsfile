@@ -66,6 +66,12 @@ pipeline {
                         sh 'pytest'
                     }
                 }
+                stage('docker build') {
+                    steps {
+                        cachedImageBuild(ecrRepo: 'samples', 
+                                         buildArgs: ["pythonVersion=${agentEnv.pythonVersion}",])
+                    }
+                }
             }
         }
     }

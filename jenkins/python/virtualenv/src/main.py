@@ -1,13 +1,14 @@
 import sys
 
-from .parsers import ZIP_PATTERN, LL_PATTERN
-from .weather import (
+from .sample.parsers import ZIP_PATTERN, LL_PATTERN
+from .sample.weather import (
     zip_lookup,
     lat_lon_lookup,
     city_lookup,
 )
 
-if __name__ == '__main__':
+
+def main():
     input = sys.argv[1]
 
     if ZIP_PATTERN.match(input):
@@ -21,3 +22,7 @@ if __name__ == '__main__':
     
     temp = r["main"]["temp"]
     print(temp)
+
+
+if __name__ == '__main__':
+    main()

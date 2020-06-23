@@ -1,0 +1,5 @@
+.venv/
+Jenkinsfile
+Makefile
+README.md
+requirements-dev.txt
